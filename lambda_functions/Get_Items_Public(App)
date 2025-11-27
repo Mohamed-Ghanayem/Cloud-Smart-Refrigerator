@@ -1,0 +1,41 @@
+	
+
+import boto3
+import json
+
+def lambda_handler(event, context):
+    dynamodb = boto3.resource('dynamodb')
+    table = dynamodb.Table('property')  
+
+    try:
+        
+        body = json.loads(event.get('body', '{}'))
+        username = body.get('user_name')
+        list_name = body.get('list_name')
+
+        if not username or not list_name:
+            return {
+                'statusCode': 400,
+                'body': json.dumps('Missing user_name or list_name')
+            }
+
+        response = table.get_item(Key={'user_name': username})
+        item_data = response.get('Item', {})
+        items_list = item_data.get(list_name, [])
+
+        item_names = [item['name'] for item in items_list if 'name' in item]
+
+        return {
+            'statusCode': 200,
+            'body': json.dumps(item_names),
+            'headers': {
+                "Access-Control-Allow-Origin": "*",
+                "Content-Type": "application/json"
+            }
+        }
+
+    except Exception as e:
+        return {
+            'statusCode': 500,
+            'body': json.dumps(f"Error: {str(e)}")
+        }
