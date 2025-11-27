@@ -1,0 +1,42 @@
+
+
+
+
+import json
+import boto3
+from botocore.exceptions import ClientError
+
+dynamodb = boto3.resource('dynamodb')
+table = dynamodb.Table('property')
+
+def lambda_handler(event, context):
+    try:
+        user_name = event.get("user_name")
+        if not user_name:
+            return {
+                "statusCode": 400,
+                "body": json.dumps({"error": "user_name is required"})
+            }
+
+        # Retrieve the user's data from DynamoDB
+        response = table.get_item(Key={"user_name": user_name})
+        if "Item" not in response:
+            return {
+                "statusCode": 404,
+                "body": json.dumps({"error": "User not found"})
+            }
+
+        # Extract the default list (stored in plain text)
+        default_items = response["Item"].get("default_list", [])
+
+        # Return the default items
+        return {
+            "statusCode": 200,
+            "body": json.dumps(default_items)
+        }
+    except Exception as e:
+        return {
+            "statusCode": 500,
+            "body": json.dumps({"error": str(e)})
+        }
+		
