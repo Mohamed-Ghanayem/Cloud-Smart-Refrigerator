@@ -4,10 +4,22 @@ A smart refrigerator system built using Jetson Nano, AWS cloud services, and an 
 This project began as a local AI-powered fridge (Part A) and was expanded in Part B into a full cloud-connected ecosystem with secure backend logic and a companion mobile application.
 
 <p align="center">
-  <img src="assets/app_login.jpg" alt="Android Login" height="350"/>
-  &nbsp;&nbsp;&nbsp;
-  <img src="assets/jetson_login.png" alt="Jetson Sign Up GUI" height="350"/>
+
+  <!-- Mobile App -->
+  <div style="display:inline-block; text-align:center; margin-right:30px;">
+    <strong>Mobile App Login Screen</strong><br>
+    <img src="assets/app_login.jpg" alt="Android Login" height="350"/>
+  </div>
+
+  <!-- Jetson GUI -->
+  <div style="display:inline-block; text-align:center;">
+    <strong>Refrigerator Sign Up GUI (Jetson Nano)</strong><br>
+    <img src="assets/jetson_login.png" alt="Jetson Sign Up GUI" height="350"/>
+  </div>
+
 </p>
+
+<br/>
 
 ---
 
