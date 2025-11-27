@@ -1,0 +1,33 @@
+import json
+import boto3
+
+dynamodb = boto3.resource('dynamodb')
+table = dynamodb.Table('property')
+
+def lambda_handler(event, context):
+    user_name = event['user_name']
+    list_name = event['list_name']
+    item_index = event['item_index']
+    updated_item = event['updated_item']
+
+    try:
+        # Update the item in DynamoDB (the "amount" is already encrypted by ItemManager)
+        response = table.update_item(
+            Key={'user_name': user_name},
+            UpdateExpression=f"SET {list_name}[{item_index}] = :updated_item",
+            ExpressionAttributeValues={
+                ':updated_item': updated_item
+            },
+            ReturnValues="UPDATED_NEW"
+        )
+
+        return {
+            'statusCode': 200,
+            'body': json.dumps('Item updated successfully')
+        }
+    except Exception as e:
+        print(f"Error: {e}")  # Debug log
+        return {
+            'statusCode': 500,
+            'body': json.dumps(str(e))
+        }
