@@ -1,0 +1,37 @@
+
+
+import json
+import boto3
+
+dynamodb = boto3.resource('dynamodb')
+table = dynamodb.Table('property')
+
+def lambda_handler(event, context):
+    user_name = event['user_name']
+    list_name = event['list_name']
+
+    try:
+        # Get the list of items from DynamoDB
+        response = table.get_item(Key={'user_name': user_name})
+        print(f"DynamoDB response: {response}")  # Debug log
+
+        if 'Item' not in response:
+            return {
+                'statusCode': 200,
+                'body': json.dumps([])  # Return an empty list if the user or list is not found
+            }
+
+        items = response['Item'].get(list_name, [])
+        print(f"Items in {list_name}: {json.dumps(items, indent=2)}")  # Debug log
+
+        # Return the items as-is (the "amount" is already encrypted by ItemManager)
+        return {
+            'statusCode': 200,
+            'body': json.dumps(items)
+        }
+    except Exception as e:
+        print(f"Error: {e}")  # Debug log
+        return {
+            'statusCode': 500,
+            'body': json.dumps(str(e))
+        }
