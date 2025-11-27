@@ -74,7 +74,7 @@ These functions ensure data consistency and secure operations through AWS KMS en
 
 ---
 
-## 🏗 System Architecture (Simplified)
+##  System Architecture (Simplified)
 Jetson Nano → item_manager.py → AWS Lambda → DynamoDB
 
 Android App → API Gateway → AWS Lambda → DynamoDB
