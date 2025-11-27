@@ -1,0 +1,72 @@
+
+
+
+import json
+import boto3
+import base64
+from botocore.exceptions import ClientError
+
+dynamodb = boto3.resource('dynamodb')
+table = dynamodb.Table('property')
+kms_client = boto3.client('kms', region_name='eu-north-1')
+
+# Default items to add to the user's default list (stored in plain text)
+DEFAULT_ITEMS = [
+    "Carrot", "Cucumber", "Lettuce", "Onion", "Potato", "Tomato", 
+    "Apple", "Banana", "Grapes", "Lemon", "Orange", "Strawberry", 
+    "Butter", "Cheese", "Milk", "Yogurt", 
+    "Eggs", "Chicken", "Beef", "Pork", 
+    "Ketchup", "Mayo", "Mustard", "Soy Sauce", 
+    "Water", "Orange Juice", "Soda", 
+    "Bread", 
+    "Pickles", "Salad Dressing", "Hummus"
+]
+
+
+def encrypt_data(data):
+    """Encrypt data using AWS KMS."""
+    try:
+        response = kms_client.encrypt(
+            KeyId='alias/MyEncryptionKey',
+            Plaintext=data.encode('utf-8')
+        )
+        # Encode the encrypted bytes as Base64 for storage in DynamoDB
+        return base64.b64encode(response['CiphertextBlob']).decode('utf-8')
+    except ClientError as e:
+        print(f"Encryption error: {e}")
+        raise
+
+def lambda_handler(event, context):
+    user_name = event['user_name']
+
+    try:
+        # Check if the user already exists
+        response = table.get_item(Key={'user_name': user_name})
+        if "Item" in response:
+            return {
+                "statusCode": 200,
+                "body": json.dumps({"message": "User already exists", "data": response["Item"]})
+            }
+
+        # Create the user's default lists
+        default_data = {
+            "user_name": user_name,
+            "default_list": DEFAULT_ITEMS,  # Store default items in plain text
+            "in_stock_list": [],  # Encrypt user-specific data when adding items
+            "shopping_list": [],  # Encrypt user-specific data when adding items
+            "expiring_soon_list": [],  # Encrypt user-specific data when adding items
+            "expired_list": []  # Encrypt user-specific data when adding items
+        }
+
+        # Save the user's data to DynamoDB
+        table.put_item(Item=default_data)
+
+        return {
+            "statusCode": 201,
+            "body": json.dumps({"message": "User lists initialized successfully", "data": default_data})
+        }
+    except Exception as e:
+        return {
+            "statusCode": 500,
+            "body": json.dumps({"error": str(e)})
+        }
