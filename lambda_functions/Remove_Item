@@ -1,0 +1,56 @@
+
+import json
+import boto3
+
+dynamodb = boto3.resource('dynamodb')
+table = dynamodb.Table('property')
+
+def lambda_handler(event, context):
+    user_name = event['user_name']
+    list_name = event['list_name']
+    item = event['item']
+
+    try:
+        # Get the list of items from DynamoDB
+        response = table.get_item(Key={'user_name': user_name})
+        print(f"DynamoDB response: {response}")  # Debug log
+
+        if 'Item' not in response:
+            return {
+                'statusCode': 404,
+                'body': json.dumps('User not found')
+            }
+
+        items = response['Item'].get(list_name, [])
+        print(f"Items in {list_name}: {items}")  # Debug log
+
+        # Find the index of the item to remove (case-insensitive comparison)
+        index_to_remove = None
+        for index, item_in_list in enumerate(items):
+            if item_in_list['name'].lower() == item['name'].lower():  # Case-insensitive comparison
+                index_to_remove = index
+                break
+
+        if index_to_remove is None:
+            return {
+                'statusCode': 404,
+                'body': json.dumps('Item not found')
+            }
+
+        # Remove the item from DynamoDB
+        response = table.update_item(
+            Key={'user_name': user_name},
+            UpdateExpression=f"REMOVE {list_name}[{index_to_remove}]",
+            ReturnValues="UPDATED_NEW"
+        )
+        print(f"Update response: {response}")  # Debug log
+
+        return {
+            'statusCode': 200,
+            'body': json.dumps('Item removed successfully')
+        }
+    except Exception as e:
+        print(f"Error: {e}")  # Debug log
+        return {
+            'statusCode': 500,
+            'body': json.dumps(str(e))
