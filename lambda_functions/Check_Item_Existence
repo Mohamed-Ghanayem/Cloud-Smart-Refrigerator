@@ -1,0 +1,61 @@
+
+
+
+import json
+import boto3
+from botocore.exceptions import ClientError
+import base64
+
+dynamodb = boto3.resource('dynamodb')
+table = dynamodb.Table('property')
+kms_client = boto3.client('kms', region_name='eu-north-1')
+
+def decrypt_data(encrypted_data):
+    """Decrypt data using AWS KMS."""
+    try:
+        response = kms_client.decrypt(
+            CiphertextBlob=encrypted_data
+        )
+        return response['Plaintext'].decode('utf-8')
+    except ClientError as e:
+        print(f"Decryption error: {e}")
+        raise
+
+def lambda_handler(event, context):
+    user_name = event['user_name']
+    list_name = event['list_name']
+    item_name = event['item_name']
+
+    try:
+        # Get the list of items from DynamoDB
+        response = table.get_item(Key={'user_name': user_name})
+        print(f"DynamoDB response: {response}")  # Debug log
+
+        if 'Item' not in response:
+            return {
+                'statusCode': 200,
+                'body': json.dumps(False)  # User not found, so item doesn't exist
+            }
+
+        items = response['Item'].get(list_name, [])
+        print(f"Items in {list_name}: {json.dumps(items, indent=2)}")  # Debug log
+
+        # Check if the item exists in the list (case-insensitive comparison)
+        for item in items:
+            if item['name'].lower() == item_name.lower():  # Case-insensitive comparison
+                return {
+                    'statusCode': 200,
+                    'body': json.dumps(True)
+                }
+
+        return {
+            'statusCode': 200,
+            'body': json.dumps(False)
+        }
+    except Exception as e:
+        print(f"Error: {e}")  # Debug log
+        return {
+            'statusCode': 500,
+            'body': json.dumps(str(e))
+        }
+		
